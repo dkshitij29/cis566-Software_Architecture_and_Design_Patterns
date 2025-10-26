@@ -12,7 +12,7 @@ jobs:
     strategy:
       # Removed unstable 3.14 and 3.13 versions.
       matrix:
-        python-version: ['3.12', '3.11', '3.10', '3.9']
+        python-version: ['3.13','3.12', '3.11', '3.10']
 
     steps:
     - uses: actions/checkout@v4
@@ -30,8 +30,7 @@ jobs:
         pip install -r backend/requirements.txt
         
     - name: "Run 1: Unit Tests (Fast & Mocked DB)"
-      # This step is fast and runs tests that do NOT need the actual DB.
-      # FIX: Run pytest from within the backend directory.
+
       run: |
         cd backend/
         pytest test_logic.py
