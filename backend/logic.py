@@ -782,3 +782,35 @@ def delete_user(user_id: int):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return "Error: An unexpected error occurred."
+    
+def get_user_for_login(email: str):
+
+    try:
+        response = (
+            supabase.table("users")
+            .select("user_id, password") # Only select what's needed
+            .eq("email", email)
+            .limit(1)
+            .execute()
+        )
+        if response.data:
+            return response.data[0] # Returns {'user_id': 1, 'password': '...'}
+        else:
+            return None
+    except APIError as e:
+        print(f"Error fetching user for login: {e.message}")
+        return None
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Verifies a plain-text password against a stored bcrypt hash.
+    """
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode('utf-8'), 
+            hashed_password.encode('utf-8')
+        )
+    except Exception as e:
+        print(f"Error verifying password: {e}")
+        return False
