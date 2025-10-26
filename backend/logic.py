@@ -1,14 +1,24 @@
-import bcrypt, os, re
+import bcrypt, os, re, logging
 from datetime import datetime, date, time, timedelta, timezone
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from postgrest.exceptions import APIError
 import secrets
 import hashlib
+
+your_frontend = "frontend url"
+
+logging.basicConfig(
+    level=logging.INFO,  # Default level
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+logger = logging.getLogger(__name__)
+
+
 VALID_ROOM_TYPES = {'single','double','suite','deluxe','economy'}
-
 PAYMENT_METHOD ={'credit_card', 'paypal', 'bank_transfer', 'cash'}
-
 PAYMENT_STATUS = {'pending', 'completed', 'failed', 'refunded'}
 
 load_dotenv()
@@ -26,13 +36,13 @@ def create_newuser(firstname: str, lastname: str, username: str, email: str, pho
     
     regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
     if not re.fullmatch(regex, email):
-        print("Invalid Email format.")
+        logger.warning(f"Invalid Email format for attempt: {email}")
         return "Error: Invalid Email format." 
 
     try:
         hashed_password = password_hash_function(password)
     except Exception as e:
-        print(f"Error during password hashing: {e}")
+        logger.error(f"Error during password hashing: {e}", exc_info=True)
         return "Error: Password hashing failed."
         
     try:
@@ -49,25 +59,26 @@ def create_newuser(firstname: str, lastname: str, username: str, email: str, pho
             .execute()
         )
         
-        print(f"Successfully created user: {response.data[0]['username']}")
+        user_email = response.data[0]['email']
+        logger.info(f"Successfully created user. Email: {user_email}, UserID: {response.data[0]['user_id']}")
         return response
 
     except APIError as e:
         if "duplicate key value violates unique constraint" in e.message:
             if "users_email_key" in e.message:
-                 print("Error: Email already exists.")
+                 logger.warning(f"Signup failed: Email already exists ({email})")
                  return "Error: Email already exists."
             if "users_username_key" in e.message:
-                 print("Error: Username already exists.")
+                 logger.warning(f"Signup failed: Username already exists ({username})")
                  return "Error: Username already exists."
             if "users_phone_number_key" in e.message:
-                print("Error: Phone number already exists.")
+                logger.warning(f"Signup failed: Phone number already exists ({phone_number})")
                 return "Error: Phone number already exists."
         
-        print(f"Database error: {e.message}")
+        logger.error(f"Database error on user creation: {e.message}", exc_info=True)
         return f"Error: {e.message}"
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.critical(f"An unexpected error occurred during user creation: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
 
 
@@ -76,15 +87,15 @@ def create_room(room_number: str, room_type: str, price_per_night: float):
     Creates a new room in the 'rooms' table with pre-validation.
     """
     if not room_number:
-        print("Error: Room number cannot be empty.")
+        logger.warning("Create room failed: Room number was empty.")
         return "Error: Room number cannot be empty."
 
     if room_type not in VALID_ROOM_TYPES:
-        print(f"Error: Invalid room type '{room_type}'.")
+        logger.warning(f"Create room failed: Invalid room type '{room_type}'.")
         return f"Error: Invalid room type. Must be one of {VALID_ROOM_TYPES}."
 
     if price_per_night <= 0:
-        print(f"Error: Price must be greater than 0. Got: {price_per_night}")
+        logger.warning(f"Create room failed: Price must be greater than 0. Got: {price_per_night}")
         return "Error: Price must be greater than 0."
 
     try:
@@ -98,21 +109,21 @@ def create_room(room_number: str, room_type: str, price_per_night: float):
             .execute()
         )
 
-        print(f"Successfully created room: {response.data[0]['room_number']}")
+        logger.info(f"Successfully created room: {response.data[0]['room_number']} (ID: {response.data[0]['room_id']})")
         return response
 
     except APIError as e:
 
         if "duplicate key value violates unique constraint" in e.message:
             if "rooms_room_number_key" in e.message:
-                 print(f"Error: Room number '{room_number}' already exists.")
+                 logger.warning(f"Create room failed: Room number '{room_number}' already exists.")
                  return f"Error: Room number '{room_number}' already exists."
         
-        print(f"Database error: {e.message}")
+        logger.error(f"Database error on room creation: {e.message}", exc_info=True)
         return f"Error: {e.message}"
     except Exception as e:
 
-        print(f"An unexpected error occurred: {e}")
+        logger.critical(f"An unexpected error occurred during room creation: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
     
 
@@ -120,26 +131,23 @@ def create_booking(user_id: int, room_id: int, check_in_str: str, check_out_str:
     """
     Creates a new booking after validating price, dates, and availability.
     """
-    
-    # --- 1. Validate Dates (Python-side) ---
+    logger.debug(f"Attempting to create booking for user_id: {user_id}, room_id: {room_id}")
+
     try:
-        # Note: Use datetime.combine to avoid timezone issues.
-        # We book from the start of check-in day to the start of check-out day.
         check_in_date = datetime.strptime(check_in_str, "%Y-%m-%d").date()
         check_out_date = datetime.strptime(check_out_str, "%Y-%m-%d").date()
     except ValueError:
-        print("Error: Invalid date format. Use YYYY-MM-DD.")
+        logger.warning(f"Invalid date format on booking creation. Got: {check_in_str}, {check_out_str}")
         return "Error: Invalid date format. Use YYYY-MM-DD."
 
     if check_in_date < date.today():
-        print("Error: Check-in date must be in the future.")
+        logger.warning(f"Booking failed: Check-in date in the past. Got: {check_in_date}")
         return "Error: Check-in date must be in the future."
         
     if check_out_date <= check_in_date:
-        print("Error: Check-out date must be after check-in date.")
+        logger.warning(f"Booking failed: Check-out date not after check-in. Got: {check_in_date} -> {check_out_date}")
         return "Error: Check-out date must be after check-in date."
 
-    # --- 2. Fetch Room Data (Get Price) ---
     try:
         room_response = (
             supabase.table("rooms")
@@ -148,19 +156,19 @@ def create_booking(user_id: int, room_id: int, check_in_str: str, check_out_str:
             .execute()
         )
         if not room_response.data:
-            print(f"Error: Room with ID {room_id} not found.")
+            logger.warning(f"Booking failed: Room with ID {room_id} not found.")
             return f"Error: Room with ID {room_id} not found."
         
         room_per_day_price = float(room_response.data[0]['price_per_night'])
+        logger.debug(f"Found room {room_id}, price_per_night: {room_per_day_price}")
 
     except APIError as e:
-        print(f"Database error fetching room: {e.message}")
+        logger.error(f"Database error fetching room {room_id}: {e.message}", exc_info=True)
         return f"Error: {e.message}"
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        logger.error(f"Unexpected error fetching room {room_id}: {e}", exc_info=True)
         return f"Error: {e}"
 
-    # --- 3. Check for Booking Conflicts (Critical Logic) ---
     try:
         conflict_response = (
             supabase.table("bookings")
@@ -171,20 +179,23 @@ def create_booking(user_id: int, room_id: int, check_in_str: str, check_out_str:
             .gt("check_out_date", check_in_str)
             .execute()
         )
+        
+        logger.debug(f"Conflict check for room {room_id} ({check_in_str} to {check_out_str}) found {conflict_response.count} conflicts.")
 
         if conflict_response.count > 0:
-            print("Error: Room is already booked for these dates.")
+            logger.warning(f"Booking failed: Room {room_id} is already booked for these dates.")
             return "Error: Room is already booked for these dates."
 
     except APIError as e:
-        print(f"Database error checking conflicts: {e.message}")
+        logger.error(f"Database error checking booking conflicts: {e.message}", exc_info=True)
         return f"Error: {e.message}"
 
-    # --- 4. Calculate Price ---
+
     num_nights = (check_out_date - check_in_date).days
     total_price = room_per_day_price * num_nights
+    logger.debug(f"Booking calculation: {num_nights} nights at ${room_per_day_price}/night = ${total_price}")
 
-    # --- 5. Insert the Booking ---
+
     try:
         booking_response = (
             supabase.table("bookings")
@@ -195,23 +206,24 @@ def create_booking(user_id: int, room_id: int, check_in_str: str, check_out_str:
                 "check_in_date": check_in_str,
                 "check_out_date": check_out_str,
                 "total_price": total_price
+
             })
             .execute()
         )
         
-        print(f"Booking created successfully: ID {booking_response.data[0]['booking_id']}")
+        logger.info(f"Booking created successfully: ID {booking_response.data[0]['booking_id']} for user {user_id}")
         return booking_response
 
     except APIError as e:
         if "foreign key constraint" in e.message:
             if "bookings_user_id_fkey" in e.message:
-                print(f"Error: User with ID {user_id} not found.")
+                logger.warning(f"Booking failed: User with ID {user_id} not found.")
                 return f"Error: User with ID {user_id} not found."
         
-        print(f"Database error creating booking: {e.message}")
+        logger.error(f"Database error creating booking: {e.message}", exc_info=True)
         return f"Error: {e.message}"
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.critical(f"An unexpected error occurred during booking creation: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
 
 
@@ -227,20 +239,23 @@ def check_reservation(
     Finds a reservation for check-in TODAY, matching the
     customer's details and a *specific status*.
     """
+    logger.debug(f"Checking reservation for today. Room type: {room_type}, Status: {booking_status}, Email: {email}")
+    
     if room_type not in VALID_ROOM_TYPES:
-        print(f"Error: Invalid room type '{room_type}'.")
+        logger.warning(f"Invalid room type '{room_type}' in check_reservation.")
         return f"Error: Invalid room type. Must be one of {VALID_ROOM_TYPES}."
 
     if email:
         regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
         if not re.fullmatch(regex, email):
-            print("Invalid Email format.")
+            logger.warning(f"Invalid Email format in check_reservation: {email}")
             return "Error: Invalid Email format."
             
     today_str = date.today().isoformat() 
+    logger.debug(f"Searching for check-in date: {today_str}")
 
     try:
-        # 1. Start building the base query
+
         query = (
             supabase.table("bookings")
             .select(
@@ -256,76 +271,65 @@ def check_reservation(
             .eq("rooms.room_type", room_type)
         )
         
-        # --- START FIX ---
-        # 2. Apply user filters directly
+
         if phonenumber:
             query = query.eq("users.phone_number", phonenumber)
         if email:
             query = query.eq("users.email", email)
         if firstname and lastname:
-            # The 'and' filter syntax is different, but this works
             query = query.filter(f"and(users.firstname.eq.{firstname},users.lastname.eq.{lastname})", "is", "null")
 
-        # 3. Check that *at least one* filter was added
+
         if not (phonenumber or email or (firstname and lastname)):
-            print("Error: At least one identifier (phone, email, or full name) must be provided.")
+            logger.warning("check_reservation failed: No identifier (phone, email, or name) was provided.")
             return "Error: No identifier provided."
         
-        # 4. Now execute the correctly built query
+
         response = query.execute()
-        # --- END FIX ---
         
         if response.data:
-            print(f"Successfully found {len(response.data)} matching reservation(s).")
+            logger.info(f"Successfully found {len(response.data)} matching reservation(s) for {email or phonenumber}.")
             return response.data
         else:
-            print(f"No bookings with status '{booking_status}' found for today.")
+            logger.info(f"No bookings with status '{booking_status}' found for today for {email or phonenumber}.")
             return []
 
     except APIError as e:
-        print(f"Database error: {e.message}")
+        logger.error(f"Database error in check_reservation: {e.message}", exc_info=True)
         return f"Error: {e.message}"
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.critical(f"An unexpected error occurred in check_reservation: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
 
-# SELECT room_id, room_number, price_per_night FROM rooms
-#WHERE is_available = true AND room_type = 'suite';
+
 def find_available_rooms_for_dates(room_type: str, check_in_str: str, check_out_str: str):
     """
     Finds all rooms of a specific type that are available
     for a given date range.
     """
-    print(room_type)
-    print(check_in_str)
-    print(check_out_str)
+    logger.debug(f"Finding available rooms. Type: {room_type}, Check-in: {check_in_str}, Check-out: {check_out_str}")
     
     try:
         check_in_date = datetime.strptime(check_in_str, "%Y-%m-%d").date()
         check_out_date = datetime.strptime(check_out_str, "%Y-%m-%d").date()
-        print(check_in_date)
-        print(check_out_date)
     except ValueError:
-        print("Error: Invalid date format. Use YYYY-MM-DD.")
+        logger.warning(f"Invalid date format in find_available_rooms. Got: {check_in_str}, {check_out_str}")
         return "Error: Invalid date format. Use YYYY-MM-DD."
 
     if check_in_date < date.today():
-        print("check_in_date < date.today()", check_in_date < date.today())
+        logger.warning(f"find_available_rooms failed: Check-in date in the past. Got: {check_in_date}")
         return "Error: Check-in date must be in the future."
         
     if check_out_date <= check_in_date:
-        print("check_in_date <= date.today()", check_in_date <= date.today())
+        logger.warning(f"find_available_rooms failed: Check-out date not after check-in. Got: {check_in_date} -> {check_out_date}")
         return "Error: Check-out date must be after check-in date."
     
-    print(VALID_ROOM_TYPES)
-    print(room_type)
     if room_type not in VALID_ROOM_TYPES:
-        print(room_type not in VALID_ROOM_TYPES)
-        print(f"Error: Invalid room type '{room_type}'.")
+        logger.warning(f"find_available_rooms failed: Invalid room type '{room_type}'.")
         return f"Error: Invalid room type. Must be one of {VALID_ROOM_TYPES}."
+
     try:
-        # --- 3. Find all conflicting booking room_ids ---
-        # This is the "overlap" query.
+
         conflict_response = (
             supabase.table("bookings")
             .select("room_id")
@@ -334,40 +338,37 @@ def find_available_rooms_for_dates(room_type: str, check_in_str: str, check_out_
             .gt("check_out_date", check_in_str)
             .execute()
         )
-        print(conflict_response)
+        
         conflicting_room_ids = {booking['room_id'] for booking in conflict_response.data}
-        print(conflicting_room_ids)
+        logger.debug(f"Found {len(conflicting_room_ids)} conflicting room IDs: {conflicting_room_ids}")
+        
         rooms_query = (
             supabase.table("rooms")
             .select("room_id, room_number, room_type, price_per_night")
             .eq("is_available", True)
             .eq("room_type", room_type)
         )
-        print(rooms_query)
-        # --- 5. Filter out the conflicting rooms ---
-        if conflicting_room_ids:
-            # This is the correct fix:
-            # 1. Format the set {1, 2} into a string like "(1,2)"
-            value_string = f"({','.join(map(str, conflicting_room_ids))})"
+        
 
-            # 2. Use the .filter() method with the 'not.in' operator
+        if conflicting_room_ids:
+            value_string = f"({','.join(map(str, conflicting_room_ids))})"
+            logger.debug(f"Filtering out rooms with IDs: {value_string}")
             rooms_query = rooms_query.filter("room_id", "not.in", value_string)
 
-        print(rooms_query) # This will now show the correct query
         available_rooms_response = rooms_query.execute()
 
         if available_rooms_response.data:
-            print(f"Found {len(available_rooms_response.data)} available rooms.")
+            logger.info(f"Found {len(available_rooms_response.data)} available rooms for type '{room_type}'.")
             return available_rooms_response.data
         else:
-            print(f"No rooms of type '{room_type}' are available for those dates.")
+            logger.info(f"No rooms of type '{room_type}' are available for those dates.")
             return []
 
     except APIError as e:
-        print(f"Database error: {e.message}")
+        logger.error(f"Database error in find_available_rooms: {e.message}", exc_info=True)
         return f"Error: {e.message}"
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.critical(f"An unexpected error in find_available_rooms: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
     
 def get_user_upcoming_bookings_by_email(email: str):
@@ -376,49 +377,40 @@ def get_user_upcoming_bookings_by_email(email: str):
     that are for today or in the future.
     """
     
-    # --- 1. Validate Email ---
     regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
     if not re.fullmatch(regex, email):
-        print("Invalid Email format.")
+        logger.warning(f"Invalid Email format in get_user_upcoming_bookings: {email}")
         return "Error: Invalid Email format!"
 
-    # --- 2. Get Today's Date ---
     today_str = date.today().isoformat()
+    logger.debug(f"Fetching upcoming bookings for {email} on or after {today_str}")
 
     try:
-        # --- 3. Execute Query ---
         response = (
             supabase.table("bookings")
             .select(
                 "booking_id, check_in_date, check_out_date, total_price, "
-                "rooms ( room_number, room_type ), "  # Select from joined rooms
-                "users ( email, firstname, lastname )"   # Select from joined users
+                "rooms ( room_number, room_type ), "
+                "users ( email, firstname, lastname )"
             )
-            
-            # --- THE FIX ---
-            # Filter on the 'users' table using dot-notation
             .eq("users.email", email) 
-            
-            # Continue with original filters
             .eq("booking_status", "confirmed")
             .gte("check_in_date", today_str)
-            
             .execute()
         )
         
-        # --- 4. Handle Response ---
         if response.data:
-            print(f"Found {len(response.data)} upcoming bookings for user {email}.")
+            logger.info(f"Found {len(response.data)} upcoming bookings for user {email}.")
             return response.data
         else:
-            print(f"No upcoming confirmed bookings found for user {email}.")
+            logger.info(f"No upcoming confirmed bookings found for user {email}.")
             return []
 
     except APIError as e:
-        print(f"Database error: {e.message}")
+        logger.error(f"Database error in get_user_upcoming_bookings: {e.message}", exc_info=True)
         return f"Error: {e.message}"
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.critical(f"An unexpected error in get_user_upcoming_bookings: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
     
 def update_user_profile(user_id: int, firstname: str = None, lastname: str = None, email: str = None, phone_number: str = None):
@@ -430,16 +422,17 @@ def update_user_profile(user_id: int, firstname: str = None, lastname: str = Non
     if email is not None:
         regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
         if not re.fullmatch(regex, email):
-            print("Invalid Email format.")
+            logger.warning(f"Invalid email format on profile update for user {user_id}: {email}")
             return "Error: Invalid Email format."
         update_data["email"] = email
     if phone_number is not None:
         update_data["phone_number"] = phone_number
 
     if not update_data:
-        print("No data provided to update.")
+        logger.warning(f"No data provided to update for user {user_id}.")
         return "No data provided to update."
 
+    logger.debug(f"Attempting to update profile for user {user_id} with data: {update_data.keys()}")
     try:
         response = (
             supabase.table("users")
@@ -447,42 +440,45 @@ def update_user_profile(user_id: int, firstname: str = None, lastname: str = Non
             .eq("user_id", user_id)
             .execute()
         )
-        print(f"Successfully updated profile for user {user_id}")
+        logger.info(f"Successfully updated profile for user {user_id}")
         return response
     
     except APIError as e:
         if "duplicate key value violates unique constraint" in e.message:
             if "users_email_key" in e.message:
+                 logger.warning(f"Profile update failed: Email already taken ({email})")
                  return "Error: That email is already taken."
             if "users_phone_number_key" in e.message:
+                logger.warning(f"Profile update failed: Phone number already taken ({phone_number})")
                 return "Error: That phone number is already taken."
         
-        print(f"Database error: {e.message}")
+        logger.error(f"Database error on profile update for user {user_id}: {e.message}", exc_info=True)
         return f"Error: {e.message}"
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.critical(f"An unexpected error on profile update for user {user_id}: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
-
-# --- Add these to your logic.py file ---
 
 def get_user_by_email(email: str):
     """
     Finds a single user and their ID based on email.
     """
+    logger.debug(f"Searching for user by email: {email}")
     try:
         response = (
             supabase.table("users")
             .select("user_id, firstname, email")
             .eq("email", email)
-            .limit(1) # Ensure we only get one
+            .limit(1)
             .execute()
         )
         if response.data:
+            logger.debug(f"Found user: {response.data[0]}")
             return response.data[0] # Return the user object
         else:
+            logger.debug(f"No user found with email: {email}")
             return None # No user found
     except APIError as e:
-        print(f"Error fetching user: {e.message}")
+        logger.error(f"Error fetching user by email {email}: {e.message}", exc_info=True)
         return None
 
 def hash_token(token: str) -> str:
@@ -495,14 +491,14 @@ def send_reset_email(email: str, token: str):
     This is where you would integrate with an email service
     like SendGrid, Mailgun, or Supabase's built-in Auth emailer.
     """
-    reset_link = f"http://your-frontend.com/reset-password?token={token}"
-    print("--- SIMULATING EMAIL ---")
-    print(f"To: {email}")
-    print(f"Subject: Reset Your Password")
-    print(f"Click here: {reset_link}")
-    print("--- !!! TOKEN FOR SCRIPT !!! ---")
-    print(f"TOKEN: {token}") # <-- THIS IS THE IMPORTANT FIX
-    print("--- END SIMULATION ---")
+    reset_link = f"http://{your_frontend}.com/reset-password?token={token}"
+    logger.info("--- SIMULATING EMAIL ---")
+    logger.info(f"To: {email}")
+    logger.info(f"Subject: Reset Your Password")
+    logger.info(f"Click here: {reset_link}")
+    logger.info(f"token:{token}")
+    logger.debug(f"PASSWORD_RESET_TOKEN: {token}")
+    logger.info("--- END SIMULATION ---")
     return True
 
 def request_password_reset(email: str):
@@ -510,23 +506,24 @@ def request_password_reset(email: str):
     Starts the "Forgot Password" process.
     Finds the user, generates a token, and sends the reset email.
     """
-    # 1. Find the user
+    logger.debug(f"Password reset requested for email: {email}")
+
     user = get_user_by_email(email)
     
-
     if not user:
-        print(f"Password reset requested for non-existent user: {email}")
+
+        logger.warning(f"Password reset requested for non-existent user: {email}")
         return "Success: If an account with this email exists, a reset link has been sent."
 
     try:
-        # 2. Generate a secure token
-        token = secrets.token_urlsafe(32) # A 32-byte secure token
-        token_hash = hash_token(token) # Hash it for database storage
+
+        token = secrets.token_urlsafe(32)
+        token_hash = hash_token(token) 
         
-        # 3. Set an expiry time (e.g., 1 hour from now)
+
         expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
         
-        # 4. Store the *hash* in the database
+
         (
             supabase.table("password_resets")
             .insert({
@@ -536,28 +533,31 @@ def request_password_reset(email: str):
             })
             .execute()
         )
+        logger.debug(f"Stored reset token hash for user {user['user_id']}")
         
-        # 5. Send the *plain-text* token to the user
+
         send_reset_email(email, token)
         
+        logger.info(f"Password reset email initiated for user {user['user_id']} ({email})")
         return "Success: If an account with this email exists, a reset link has been sent."
 
     except APIError as e:
-        print(f"Database error during password reset: {e.message}")
+        logger.error(f"Database error during password reset request for {email}: {e.message}", exc_info=True)
         return "Error: An internal error occurred."
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        logger.critical(f"Unexpected error during password reset request for {email}: {e}", exc_info=True)
         return "Error: An internal error occurred."
     
 def verify_and_reset_password(token: str, new_password: str):
     """
     Verifies a password reset token and updates the user's password.
     """
-    # 1. Hash the token provided by the user
+
     token_hash = hash_token(token)
+    logger.debug(f"Attempting to verify password reset with token hash: {token_hash[:10]}...")
     
     try:
-        # 2. Find the token in the database
+
         response = (
             supabase.table("password_resets")
             .select("user_id, expires_at")
@@ -567,29 +567,30 @@ def verify_and_reset_password(token: str, new_password: str):
         )
         
         if not response.data:
-            print("Invalid or expired token used.")
+            logger.warning(f"Invalid or expired token used. Hash: {token_hash[:10]}...")
             return "Error: Invalid or expired token."
             
         reset_request = response.data[0]
         expires_at = datetime.fromisoformat(reset_request['expires_at'])
         user_id = reset_request['user_id']
         
-        # 3. Check if it's expired
+
         if expires_at < datetime.now(timezone.utc):
-            print("Expired token used.")
+            logger.warning(f"Expired token used for user {user_id}. Expiry: {expires_at}")
             return "Error: Invalid or expired token."
             
-        # 4. If valid, update the user's password
-        # This re-uses the secure function we already built!
+
+        logger.debug(f"Token verified for user {user_id}. Proceeding to password update.")
         update_result = update_user_password(
             user_id=user_id, 
             new_password=new_password
         )
         
         if "Error" in str(update_result):
+            logger.error(f"Password update failed for user {user_id} after token verification.")
             return "Error: Could not update password."
             
-        # 5. Invalidate the token by deleting it
+
         (
             supabase.table("password_resets")
             .delete()
@@ -597,22 +598,22 @@ def verify_and_reset_password(token: str, new_password: str):
             .execute()
         )
         
-        print(f"Successfully reset password for user {user_id}")
+        logger.info(f"Successfully reset password for user {user_id}")
         return "Success: Your password has been reset."
 
     except APIError as e:
-        print(f"Database error: {e.message}")
+        logger.error(f"Database error during password reset verification: {e.message}", exc_info=True)
         return "Error: An internal error occurred."
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        logger.critical(f"Unexpected error during password reset verification: {e}", exc_info=True)
         return "Error: An internal error occurred."
 
 def update_user_password(user_id: int , new_password: str):
     '''
-    write a regular expression to check the password strength.
+    Updates a user's password hash in the database.
     '''
     if not new_password or len(new_password) < 8:
-        print("Error: Password must be at least 8 characters.")
+        logger.warning(f"Password update failed for user {user_id}: Password must be at least 8 characters.")
         return "Error: Password must be at least 8 characters."
         
     try:
@@ -623,11 +624,11 @@ def update_user_password(user_id: int , new_password: str):
             .eq("user_id", user_id)
             .execute()
         )
-        print(f"Successfully updated password for user {user_id}")
+        logger.info(f"Successfully updated password for user {user_id}")
         return response
     
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.error(f"An unexpected error occurred during password update for user {user_id}: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
 
 def confirm_payment(booking_id: int, user_id: int, amount: float, payment_method: str, transaction_id: str
@@ -637,8 +638,10 @@ def confirm_payment(booking_id: int, user_id: int, amount: float, payment_method
     and confirm the booking atomically.
     """
     if payment_method not in PAYMENT_METHOD:
+        logger.warning(f"Confirm payment failed: Invalid payment method '{payment_method}'")
         return "Error: Invalid payment method"
         
+    logger.debug(f"Calling RPC 'process_payment_and_confirm' for booking {booking_id}")
     try:
         supabase.rpc('process_payment_and_confirm', {
             'booking_id_to_confirm': booking_id,
@@ -648,14 +651,15 @@ def confirm_payment(booking_id: int, user_id: int, amount: float, payment_method
             'new_transaction_id': transaction_id
         }).execute()
         
-        print(f"Successfully confirmed booking {booking_id}")
+        logger.info(f"Successfully confirmed booking {booking_id} via RPC.")
         return "Success"
 
     except APIError as e:
-        print(f"Error during transaction: {e.message}")
-        print("Transaction was rolled back.")
+        logger.error(f"Error during RPC transaction for booking {booking_id}: {e.message}", exc_info=True)
+        logger.warning("Transaction was rolled back.")
         return f"Error: {e.message}"
     except Exception as e:
+        logger.critical(f"Unexpected error in RPC call for booking {booking_id}: {e}", exc_info=True)
         return f"Error: An unexpected error occurred."
     
 
@@ -672,34 +676,35 @@ def process_check_in_payment(
     3. Calls the transaction function to confirm payment.
     """
     
-    print(f"Finding pending check-in for {email}...")
+    logger.info(f"Processing check-in for {email}, room type {room_type}")
     reservations = check_reservation(room_type=room_type, email=email, booking_status="pending")
     
     if isinstance(reservations, str):
+        logger.warning(f"Check-in failed at 'check_reservation' step: {reservations}")
         return f"Find step failed: {reservations}"
     
     if not reservations:
+        logger.warning(f"Check-in failed: No pending reservation found for {email}, {room_type}.")
         return "Error: No pending reservation found for today with those details."
     
     if len(reservations) > 1:
+        logger.warning(f"Check-in failed: Found {len(reservations)} pending reservations for {email}. Requires manual intervention.")
         return "Error: Found multiple pending reservations. Please contact staff."
 
     booking_to_confirm = reservations[0]
 
-
     try:
-
         internal_booking_id = booking_to_confirm['booking_id']
         internal_user_id = booking_to_confirm['users']['user_id']
         price_to_charge = booking_to_confirm['total_price']
     except (KeyError, TypeError) as e:
-        print(f"Error: Found booking, but it's missing key data: {e}")
+        logger.error(f"Check-in failed: Found booking, but it's missing key data. Booking: {booking_to_confirm}", exc_info=True)
         return "Error: Found booking, but data was incomplete."
 
-    print(f"Found booking {internal_booking_id}. Ready to charge ${price_to_charge}.")
+    logger.debug(f"Found booking {internal_booking_id}. Ready to charge ${price_to_charge} to user {internal_user_id}.")
     
     # --- STEP 4: ACT ---
-    print(f"Processing payment for booking {internal_booking_id}...")
+    logger.debug(f"Processing payment for booking {internal_booking_id}...")
     confirmation_result = confirm_payment(
         booking_id=internal_booking_id,
         user_id=internal_user_id,
@@ -708,15 +713,19 @@ def process_check_in_payment(
         transaction_id=transaction_id
     )
     
-    # This will return "Success" or an error message
+    if "Success" in confirmation_result:
+        logger.info(f"Check-in complete for booking {internal_booking_id}")
+    else:
+        logger.error(f"Check-in failed at 'confirm_payment' step for booking {internal_booking_id}: {confirmation_result}")
+        
     return confirmation_result
 
 
 def cancel_pending_booking(booking_id: int):
     """
     Deletes a booking record IF its status is 'pending'.
-    Any related reviews will be auto-deleted by the DB (ON DELETE CASCADE).
     """
+    logger.debug(f"Attempting to cancel pending booking {booking_id}")
     try:
         response = (
             supabase.table("bookings")
@@ -727,22 +736,26 @@ def cancel_pending_booking(booking_id: int):
         )
         
         if response.data:
-            print(f"Successfully canceled pending booking {booking_id}.")
+            logger.info(f"Successfully canceled pending booking {booking_id}.")
             return "Success"
         else:
-
-            print(f"Error: No pending booking found with ID {booking_id} to cancel.")
+            # This is not an error, just a fact. Could be a 'confirmed' booking or a wrong ID.
+            logger.warning(f"Could not cancel booking {booking_id}: No 'pending' booking found with that ID.")
             return "Error: Booking not found or was not pending."
 
     except APIError as e:
-        print(f"Database error: {e.message}")
+        logger.error(f"Database error on cancel_pending_booking {booking_id}: {e.message}", exc_info=True)
         return f"Error: {e.message}"
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.critical(f"An unexpected error on cancel_pending_booking {booking_id}: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
     
 
 def delete_room(room_id: int):
+    """
+    Deletes a room, protected by 'ON DELETE RESTRICT' from bookings.
+    """
+    logger.debug(f"Attempting to delete room {room_id}")
     try:
         response = (
             supabase.table("rooms")
@@ -752,32 +765,30 @@ def delete_room(room_id: int):
         )
         
         if response.data:
-            print(f"Successfully deleted room {room_id}.")
+            logger.info(f"Successfully deleted room {room_id}.")
             return "Success"
         else:
-            print(f"Error: No room found with ID {room_id}.")
+            logger.warning(f"Could not delete room {room_id}: Not found.")
             return "Error: Room not found."
 
     except APIError as e:
-        # This is the crucial part: catching the foreign key violation
         if "violates foreign key constraint" in e.message and "on table \"bookings\"" in e.message:
-            print(f"Error: Cannot delete room {room_id} because it has existing bookings.")
-            print("This is the 'ON DELETE RESTRICT' safeguard working correctly.")
+            logger.warning(f"Error: Cannot delete room {room_id} because it has existing bookings.")
+            logger.debug("This is the 'ON DELETE RESTRICT' safeguard working correctly.")
             return "Error: Room has existing bookings."
         else:
-            # Handle other, unexpected database errors
-            print(f"Database error: {e.message}")
+            logger.error(f"Database error on delete_room {room_id}: {e.message}", exc_info=True)
             return f"Error: {e.message}"
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.critical(f"An unexpected error on delete_room {room_id}: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
     
 def delete_user(user_id: int):
     """
     Deletes a user.
-    Related records in bookings, reviews, and payments will
-    have their 'user_id' field set to NULL (ON DELETE SET NULL).
+    Related records will be anonymized (ON DELETE SET NULL).
     """
+    logger.debug(f"Attempting to delete user {user_id}")
     try:
         response = (
             supabase.table("users")
@@ -787,22 +798,25 @@ def delete_user(user_id: int):
         )
         
         if response.data:
-            print(f"Successfully deleted user {user_id}.")
-            print("Related historical records have been anonymized (user_id set to NULL).")
+            logger.info(f"Successfully deleted user {user_id}.")
+            logger.debug(f"Related historical records for user {user_id} have been anonymized (user_id set to NULL).")
             return "Success"
         else:
-            print(f"Error: No user found with ID {user_id}.")
+            logger.warning(f"Could not delete user {user_id}: Not found.")
             return "Error: User not found."
 
     except APIError as e:
-        print(f"Database error: {e.message}")
+        logger.error(f"Database error on delete_user {user_id}: {e.message}", exc_info=True)
         return f"Error: {e.message}"
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logger.critical(f"An unexpected error on delete_user {user_id}: {e}", exc_info=True)
         return "Error: An unexpected error occurred."
     
 def get_user_for_login(email: str):
-
+    """
+    Fetches the minimal user data needed for login verification.
+    """
+    logger.debug(f"Fetching user for login attempt: {email}")
     try:
         response = (
             supabase.table("users")
@@ -812,11 +826,13 @@ def get_user_for_login(email: str):
             .execute()
         )
         if response.data:
+            logger.debug(f"Found user {response.data[0]['user_id']} for login attempt.")
             return response.data[0] # Returns {'user_id': 1, 'password': '...'}
         else:
+            logger.warning(f"Login failed: No user found with email: {email}")
             return None
     except APIError as e:
-        print(f"Error fetching user for login: {e.message}")
+        logger.error(f"Error fetching user for login {email}: {e.message}", exc_info=True)
         return None
 
 
@@ -824,11 +840,14 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verifies a plain-text password against a stored bcrypt hash.
     """
+    logger.debug("Verifying password hash...")
     try:
-        return bcrypt.checkpw(
+        is_valid = bcrypt.checkpw(
             plain_password.encode('utf-8'), 
             hashed_password.encode('utf-8')
         )
+        logger.debug(f"Password verification result: {is_valid}")
+        return is_valid
     except Exception as e:
-        print(f"Error verifying password: {e}")
+        logger.error(f"Error verifying password: {e}", exc_info=True)
         return False
