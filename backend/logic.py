@@ -296,21 +296,31 @@ def find_available_rooms_for_dates(room_type: str, check_in_str: str, check_out_
     Finds all rooms of a specific type that are available
     for a given date range.
     """
+    print(room_type)
+    print(check_in_str)
+    print(check_out_str)
     
     try:
         check_in_date = datetime.strptime(check_in_str, "%Y-%m-%d").date()
         check_out_date = datetime.strptime(check_out_str, "%Y-%m-%d").date()
+        print(check_in_date)
+        print(check_out_date)
     except ValueError:
         print("Error: Invalid date format. Use YYYY-MM-DD.")
         return "Error: Invalid date format. Use YYYY-MM-DD."
 
     if check_in_date < date.today():
+        print("check_in_date < date.today()", check_in_date < date.today())
         return "Error: Check-in date must be in the future."
         
     if check_out_date <= check_in_date:
+        print("check_in_date <= date.today()", check_in_date <= date.today())
         return "Error: Check-out date must be after check-in date."
     
+    print(VALID_ROOM_TYPES)
+    print(room_type)
     if room_type not in VALID_ROOM_TYPES:
+        print(room_type not in VALID_ROOM_TYPES)
         print(f"Error: Invalid room type '{room_type}'.")
         return f"Error: Invalid room type. Must be one of {VALID_ROOM_TYPES}."
     try:
@@ -324,20 +334,26 @@ def find_available_rooms_for_dates(room_type: str, check_in_str: str, check_out_
             .gt("check_out_date", check_in_str)
             .execute()
         )
-
+        print(conflict_response)
         conflicting_room_ids = {booking['room_id'] for booking in conflict_response.data}
-        
+        print(conflicting_room_ids)
         rooms_query = (
             supabase.table("rooms")
-            .select("room_id, room_number, price_per_night")
+            .select("room_id, room_number, room_type, price_per_night")
             .eq("is_available", True)
             .eq("room_type", room_type)
         )
-        
+        print(rooms_query)
         # --- 5. Filter out the conflicting rooms ---
         if conflicting_room_ids:
-            rooms_query = rooms_query.not_("room_id", "in", list(conflicting_room_ids))
-            
+            # This is the correct fix:
+            # 1. Format the set {1, 2} into a string like "(1,2)"
+            value_string = f"({','.join(map(str, conflicting_room_ids))})"
+
+            # 2. Use the .filter() method with the 'not.in' operator
+            rooms_query = rooms_query.filter("room_id", "not.in", value_string)
+
+        print(rooms_query) # This will now show the correct query
         available_rooms_response = rooms_query.execute()
 
         if available_rooms_response.data:
@@ -479,11 +495,13 @@ def send_reset_email(email: str, token: str):
     This is where you would integrate with an email service
     like SendGrid, Mailgun, or Supabase's built-in Auth emailer.
     """
-    reset_link = f"url+token"
+    reset_link = f"http://your-frontend.com/reset-password?token={token}"
     print("--- SIMULATING EMAIL ---")
     print(f"To: {email}")
     print(f"Subject: Reset Your Password")
     print(f"Click here: {reset_link}")
+    print("--- !!! TOKEN FOR SCRIPT !!! ---")
+    print(f"TOKEN: {token}") # <-- THIS IS THE IMPORTANT FIX
     print("--- END SIMULATION ---")
     return True
 
