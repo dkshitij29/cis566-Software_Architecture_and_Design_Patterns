@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # --- Dynamic Configuration ---
-#BASE_URL="https://cis566-software-architecture-and-design-oqof.onrender.com"
-BASE_URL="http://127.0.0.1:8000"
+BASE_URL="https://cis566-software-architecture-and-design-oqof.onrender.com"
+#BASE_URL="http://127.0.0.1:8000"
 TIMESTAMP=$(date +%s)
 USER_EMAIL="user_$TIMESTAMP@example.com"
 USERNAME="user_$TIMESTAMP"
