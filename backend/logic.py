@@ -851,3 +851,29 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     except Exception as e:
         logger.error(f"Error verifying password: {e}", exc_info=True)
         return False
+    
+
+def get_user_email_by_id(user_id: int):
+    """
+    Finds a single user's email based on user_id.
+    """
+    logger.debug(f"Searching for user email by ID: {user_id}")
+    try:
+        response = (
+            supabase.table("users")
+            .select("email")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+        if response.data:
+            return response.data[0]['email'] # Return the email string
+        else:
+            logger.debug(f"No user found with ID: {user_id}")
+            return None 
+    except APIError as e:
+        logger.error(f"Error fetching user email by ID {user_id}: {e.message}", exc_info=True)
+        return None
+    except Exception as e:
+        logger.critical(f"An unexpected error occurred in get_user_email_by_id: {e}", exc_info=True)
+        return None

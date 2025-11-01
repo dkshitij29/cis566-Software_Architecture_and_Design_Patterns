@@ -15,7 +15,7 @@ app = FastAPI(title="Hotel Reservation API")
 
 origins = [
     "http://localhost",
-    "http://localhost:3000", # For React (default)
+    "http://localhost:3000", 
     "http://localhost:5173", 
     "http://localhost:8080", 
     "http://localhost:5000",
@@ -25,11 +25,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 # --- END BLOCK ---
-# Load secret key from .env
+
 SECRET_KEY = os.environ.get("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -37,8 +37,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
 
-# --- Pydantic Models (Data Validation) ---
-# These models define the shape of your API's JSON data
 
 class UserCreate(BaseModel):
     firstname: str
@@ -138,9 +136,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     
-    # In a real app, you'd fetch the user from the DB here
-    # user = logic.get_user_by_id(user_id) 
-    # For now, just returning the ID is fine
     return token_data.user_id
 
 
@@ -240,6 +235,22 @@ def reset_password(request: PasswordResetConfirm):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result)
     return {"message": result}
 
+
+@users_router.delete("/me", status_code=status.HTTP_200_OK)
+def delete_my_account(current_user_id: int = Depends(get_current_user)):
+    """
+    Deletes the currently logged-in user's account. (Requires authentication)
+    Related records (bookings) are handled by database policies (SET NULL).
+    """
+    result = logic.delete_user(current_user_id)
+
+    if "Error:" in result:
+        if "not found" in result:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=result)
+
+    return {"message": "Success: Your account and associated data have been deleted."}
+
 # --- Room Endpoints ---
 
 @rooms_router.post("/", response_model=RoomResponse, status_code=status.HTTP_201_CREATED)
@@ -247,8 +258,6 @@ def create_new_room(room: RoomCreate, current_user_id: int = Depends(get_current
     """
     Create a new room. (Protected - requires login).
     """
-    # Here you would check if current_user_id is an admin
-    # For now, we just require login
     
     result = logic.create_room(room.room_number, room.room_type, room.price_per_night)
     
@@ -270,9 +279,64 @@ def get_available_rooms(room_type: str, check_in: str, check_out: str):
     if "Error:" in str(result):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result)
     
-    return result # Already returns a list or an empty list
+    return result 
 
-# --- Booking & Check-In Endpoints ---
+@rooms_router.delete("/{room_id}", status_code=status.HTTP_200_OK)
+def delete_room_endpoint(room_id: int, current_user_id: int = Depends(get_current_user)):
+    """
+    Deletes a room by ID. (Protected - requires login/Admin access)
+    Fails if the room has existing bookings (ON DELETE RESTRICT).
+    """    
+    result = logic.delete_room(room_id)
+
+    if "Error:" in result:
+        if "Room has existing bookings" in result:
+
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=result) 
+        if "not found" in result:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result)
+
+    return {"message": "Success: Room deleted."}
+
+# --- Bookings Endpoints ---
+
+
+@bookings_router.get("/my-upcoming", status_code=status.HTTP_200_OK)
+def get_my_upcoming_bookings(current_user_id: int = Depends(get_current_user)):
+    """
+    Fetches all confirmed bookings for the logged-in user that are for today or in the future.
+    """
+
+    user_email = logic.get_user_email_by_id(current_user_id)
+    if not user_email:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Error: User not found or email could not be retrieved.")
+
+
+    result = logic.get_user_upcoming_bookings_by_email(user_email)
+    
+    if "Error:" in str(result):
+
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=result)
+
+
+    return result
+
+
+@bookings_router.delete("/{booking_id}/cancel", status_code=status.HTTP_200_OK)
+def cancel_booking_endpoint(booking_id: int, current_user_id: int = Depends(get_current_user)):
+    """
+    Cancels a booking if its status is 'pending'. (Requires authentication)
+    """
+    
+    result = logic.cancel_pending_booking(booking_id)
+
+    if "Error:" in result:
+        if "Booking not found or was not pending" in result:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=result)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result)
+
+    return {"message": "Success: Pending booking has been canceled."}
 
 @bookings_router.post("/check-in", status_code=status.HTTP_200_OK)
 def process_check_in(request: CheckInRequest):
