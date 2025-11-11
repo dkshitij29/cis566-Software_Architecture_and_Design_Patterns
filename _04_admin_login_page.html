@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head> <!-- Just describes the metainformation, wont actually contribute to the view of the page -->
+    <meta charset="UTF-8"> <!--setting the font--> 
+    <meta name="viewport" content="width=device-width, inital-scale=1.0"> <!-- setting the container scaling -->
+    <title>Login</title> <!-- Setting the title of the page-->
+    <link rel="stylesheet" href="styles/_04_admin_login_page.css"> <!-- css file reference -->
+    <link rel="stylesheet" href="styles/global_login_pages.css">
+    <script defer src = "functionality/admin_login_page.js"></script> <!-- javascript file reference -->
+
+</head>
+
+<body>
+    <main id="main-holder">
+        <div id="welcome-holder">
+            <h1 id="welcome-header">HOTEL LOGIN</h1> <!-- setting most important header for the page-->
+            <h2 id="welcome-msg">WELCOME ADMIN</h2> <!-- setting most important header for the page-->
+        </div>
+
+        <div id="login-holder">
+            <div id="login-error-msg-holder">
+                <p id="login-error-msg">Invalid username <span id="error-msg-second-line"> and/or or password</span></p>
+            </div>
+
+            <form id="login-form"> <!-- defines and labels the input element-->
+                <div class="field-holder">
+                    <input type="text" name="username" id="username-field" class="login-form-field" required>
+                    <label for="name">username </label>
+                </div>
+                <div class="field-holder">
+                    <input type="password" name="password" id="password-field" class="login-form-field" required>
+                    <label for="name">password </label>
+                </div>
+                <input type="submit" value="LOGIN" id="login-form-submit">
+                <div class="custom-divider"></div>
+                <input type="submit" value="NEW USER SIGNUP" id="signup-form-submit">
+            </form>
+        </div>
+
+    </main>
+</body>
+
+</html>
