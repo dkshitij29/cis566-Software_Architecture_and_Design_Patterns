@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head> <!-- Just describes the metainformation, wont actually contribute to the view of the page -->
+    <meta charset="UTF-8"> <!--setting the font--> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- setting the container scaling -->
+    <title>Responsive Sidebar</title> <!-- Setting the title of the page-->
+    <link href='https://cdn.boxicons.com/3.0.4/fonts/basic/boxicons.min.css' rel='stylesheet'>
+    <link href='https://cdn.boxicons.com/3.0.4/fonts/brands/boxicons-brands.min.css' rel='stylesheet'>
+    
+    <link href='./styles/guest_dashboard.css' rel='stylesheet'>
+    <script defer src = "guest_dashboard.js"></script>
+</head>
+
+<body>
+    <div class = "wrapper-body">
+        <div class = "sidebar-wrapper">
+            <!-- HEADER TOPBAR-->
+            <a href="#" class="logo-wrapper">
+                <span class = "logo"> HM </span>
+                <h2 class = "hide">HOTEL GUEST</h2>
+            </a>
+
+        <!-- HEADER END -->
+
+        <!-- Profile / Avatar -->
+            <div class = "sidebar-profile">
+                <div class = "avatar-wrapper">
+                    <i class='bxr  bx-user-circle' alt="profile"></i> 
+                </div>
+                <div class = "avatar-name">
+                    <div class = "user-name">username</div>
+                    <div class = "email">user@email.com</div>
+                </div>
+            </div> 
+
+            <!-- SIDEBAR LINK -->
+            <div class = "sidebar-link">
+                <ul>
+                    <li>
+                        <a href = "#" >
+                            <i class = "bx bxs-home"></i>
+                            <span class = "link">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href = "#">
+                            <i class = "bx bx-bed"></i>
+                            <span class = "link">Book a Room</span>
+                        </a>
+                    </li>
+
+                </ul>
+            </div>
+            <!-- SIDEBAR LINK END -->
+
+            <!-- SIDEBAR BOTTOM -->
+            <div class = "sidebar-bottom">
+                <div class = "sidebar-link">
+                    <ul>
+                        <li>
+                            <a href = "#">
+                                <i class = "bx bx-cog"></i>
+                                <span class = "link">Settings</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Profile / Avatar End -->
+            </div>
+            <!-- SIDEBAR BOTTOM END -->
+        </div>
+    </div>
+</body>
