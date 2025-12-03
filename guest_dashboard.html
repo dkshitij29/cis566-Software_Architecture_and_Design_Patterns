@@ -7,70 +7,118 @@
     <title>Responsive Sidebar</title> <!-- Setting the title of the page-->
     <link href='https://cdn.boxicons.com/3.0.4/fonts/basic/boxicons.min.css' rel='stylesheet'>
     <link href='https://cdn.boxicons.com/3.0.4/fonts/brands/boxicons-brands.min.css' rel='stylesheet'>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link href='./styles/guest_dashboard_sidebar.css' rel='stylesheet'>
     <link href='./styles/guest_dashboard.css' rel='stylesheet'>
-    <script defer src = "guest_dashboard.js"></script>
+    
+    <script src = "./functionality/guest_dashboard.js" defer></script>
+
 </head>
 
 <body>
-    <div class = "wrapper-body">
-        <div class = "sidebar-wrapper">
-            <!-- HEADER TOPBAR-->
-            <a href="#" class="logo-wrapper">
-                <span class = "logo"> HM </span>
-                <h2 class = "hide">HOTEL GUEST</h2>
-            </a>
+    <div class="grid-container">
+        <div class = "sidebar-body">
+            <div class = "sidebar-wrapper">
+                <!-- HEADER TOPBAR-->
+                <a href="#" class="logo-wrapper">
+                    <span class = "logo"> HM </span>
+                    <h2 class = "hide">HOTEL GUEST</h2>
+                </a>
 
-        <!-- HEADER END -->
+            <!-- HEADER END -->
 
-        <!-- Profile / Avatar -->
-            <div class = "sidebar-profile">
-                <div class = "avatar-wrapper">
-                    <i class='bxr  bx-user-circle' alt="profile"></i> 
-                </div>
-                <div class = "avatar-name">
-                    <div class = "user-name">username</div>
-                    <div class = "email">user@email.com</div>
-                </div>
-            </div> 
+            <!-- Profile / Avatar -->
+                <div class = "sidebar-profile">
+                    <div class = "avatar-wrapper">
+                        <i class='bx  bx-user-circle' alt="profile"></i> 
+                    </div>
+                    <div class = "avatar-name">
+                        <div class = "user-name">username</div>
+                        <div class = "email">user@email.com</div>
+                    </div>
+                </div> 
 
-            <!-- SIDEBAR LINK -->
-            <div class = "sidebar-link">
-                <ul>
-                    <li>
-                        <a href = "#" >
-                            <i class = "bx bxs-home"></i>
-                            <span class = "link">Dashboard</span>
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href = "#">
-                            <i class = "bx bx-bed"></i>
-                            <span class = "link">Book a Room</span>
-                        </a>
-                    </li>
-
-                </ul>
-            </div>
-            <!-- SIDEBAR LINK END -->
-
-            <!-- SIDEBAR BOTTOM -->
-            <div class = "sidebar-bottom">
+                <!-- SIDEBAR LINK -->
                 <div class = "sidebar-link">
                     <ul>
                         <li>
-                            <a href = "#">
-                                <i class = "bx bx-cog"></i>
-                                <span class = "link">Settings</span>
+                            <a href = "#" >
+                                <i class = "bx bxs-home"></i>
+                                <span class = "link">Dashboard</span>
                             </a>
                         </li>
+
+                        <li>
+                            <a href = "#">
+                                <i class = "bx bx-bed"></i>
+                                <span class = "link">Book a Room</span>
+                            </a>
+                        </li>
+
                     </ul>
                 </div>
+                <!-- SIDEBAR LINK END -->
 
-                <!-- Profile / Avatar End -->
+                <!-- SIDEBAR BOTTOM -->
+                <div class = "sidebar-bottom">
+                    <div class = "sidebar-link">
+                        <ul>
+                            <li>
+                                <a href = "#">
+                                    <i class = "bx bx-cog"></i>
+                                    <span class = "link">Settings</span>
+                                </a>
+                                <a href = "#">
+                                    <i class = "bx bx-arrow-out-right-circle-half"></i>
+                                    <span class = "link">Log Out</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Profile / Avatar End -->
+                </div>
+                <!-- SIDEBAR BOTTOM END -->
             </div>
-            <!-- SIDEBAR BOTTOM END -->
+        </div>
+
+        <div class="page active" id="main-container">
+            <div class = "card">
+                <div class = "card-header">
+                    <p class = "text-primary" id="view-title">UPCOMING/CURRENT STAYS</p>
+                    <button class="view-all-stays-btn" id="toggle">View BOOKING HISTORY</button>
+                </div>
+                <div class = "card-info">
+                    <div class="list-view">
+                        
+                        <div class="search-bar">
+                            <input type="text" id="searchInput" placeholder="Search bookings...">
+                            <select id="filterSelect" required>
+                                <option value="" disabled selected hidden>Filter by...</option>
+                                <option value="All">All</option>
+                                <option value="Booking No.">Booking No.</option>
+                                <option value="Room Desc">Room Desc</option>
+                                <option value="Check In Date">Check In Date</option>
+                                <option value="Check Out Date">Check Out Date</option>
+                                <option value="Booking Date">Booking Date</option>
+                                <option value="Occupancy">Occupany</option>
+                                <option value="Bed Options">Bed Options</option>
+                            </select>
+                        </div>
+
+                        <ul id="myList">
+                        <!-- List items added here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class=page id="book-a-room">
+        </div>
+
+        <div class=page id="settings">
         </div>
     </div>
 </body>
