@@ -389,12 +389,12 @@ def get_user_upcoming_bookings_by_email(email: str):
         response = (
             supabase.table("bookings")
             .select(
-                "booking_id, check_in_date, check_out_date, total_price, "
+                "booking_id, check_in_date, check_out_date, total_price, booking_status, " # ADD booking_status here so frontend can see it
                 "rooms ( room_number, room_type ), "
                 "users ( email, firstname, lastname )"
             )
             .eq("users.email", email) 
-            .eq("booking_status", "confirmed")
+            .in_("booking_status", ["confirmed", "pending"]) 
             .gte("check_in_date", today_str)
             .execute()
         )
