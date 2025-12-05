@@ -7,7 +7,8 @@
     <title>Login</title> <!-- Setting the title of the page-->
     <link rel="stylesheet" href="styles/global_login_pages.css"> <!-- css file reference -->
     <link rel="stylesheet" href="styles/signup_page.css"> <!-- css file reference -->
-    <script defer src = "functionality/signup_page.js"></script> <!-- javascript file reference -->
+    <script src="config.js"></script> 
+    <script defer src = "functionality/signup_page.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 </head>
@@ -64,9 +65,14 @@
                     <input type="date" name="dob" id="dob-field" class="user-info-form-field" required>
                     <label for="name">date of birth </label>
                 </div>
+                <div class="field-holder">
+                    <input type="test" name="phonenumber" id="phonenumber" class="user-info-form-field" required>
+                    <label for="name">Phone Number </label>
+                </div>
                 <div class="custom-divider"></div>
                 <input type="submit" value="CREATE ACCOUNT" id="form-submit">
             </form>
         </div>
     </main>
 </body>
+</html>

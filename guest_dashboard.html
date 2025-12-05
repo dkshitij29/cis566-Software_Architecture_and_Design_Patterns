@@ -11,9 +11,8 @@
 
     <link href='./styles/guest_dashboard_sidebar.css' rel='stylesheet'>
     <link href='./styles/guest_dashboard.css' rel='stylesheet'>
-    
+    <script src="config.js"></script> 
     <script src = "./functionality/guest_dashboard.js" defer></script>
-
 </head>
 
 <body>
@@ -69,9 +68,8 @@
                                     <i class = "bx bx-cog"></i>
                                     <span class = "link">Settings</span>
                                 </a>
-                                <a href = "#">
-                                    <i class = "bx bx-arrow-out-right-circle-half"></i>
-                                    <span class = "link">Log Out</span>
+                                <a href="#" id="guest-logout-btn"> <i class="bx bx-arrow-out-right-circle-half"></i>
+                                    <span class="link">Log Out</span>
                                 </a>
                             </li>
                         </ul>
@@ -114,11 +112,70 @@
                 </div>
             </div>
         </div>
-
-        <div class=page id="book-a-room">
+        <div class="page" id="book-a-room">
+            <div class="card">
+                <div class="card-header">
+                    <p class="text-primary">FIND A ROOM</p>
+                </div>
+                <div class="card-info">
+                    <form id="room-search-form">
+                        <div class="search-bar">
+                            <select id="search-room-type" required>
+                                <option value="" disabled selected>Select Room Type</option>
+                                <option value="single">Single</option>
+                                <option value="double">Double</option>
+                                <option value="suite">Suite</option>
+                                <option value="deluxe">Deluxe</option>
+                                <option value="economy">Economy</option>
+                            </select>
+                            <div class="date-group">
+                                <label>Check In:</label>
+                                <input type="date" id="search-check-in" required>
+                            </div>
+                            <div class="date-group">
+                                <label>Check Out:</label>
+                                <input type="date" id="search-check-out" required>
+                            </div>
+                            <button type="submit" id="search-btn">Search Availability</button>
+                        </div>
+                    </form>
+                    <div id="search-results-container">
+                        <ul id="available-rooms-list"></ul>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class=page id="settings">
+        <div class="page" id="settings">
+            <div class="card">
+                <div class="card-header">
+                    <p class="text-primary">ACCOUNT SETTINGS</p>
+                </div>
+                <div class="card-info">
+                    <form id="update-profile-form">
+                        <div class="field-holder">
+                            <label>First Name</label>
+                            <input type="text" id="update-firstname" required>
+                        </div>
+                        <div class="field-holder">
+                            <label>Last Name</label>
+                            <input type="text" id="update-lastname" required>
+                        </div>
+                        <div class="field-holder">
+                            <label>Email</label>
+                            <input type="email" id="update-email" required>
+                        </div>
+                        <div class="field-holder">
+                            <label>Phone</label>
+                            <input type="text" id="update-phone" required>
+                        </div>
+                        <button type="submit" id="save-settings-btn">Update Profile</button>
+                    </form>
+                    <hr>
+                    <button id="delete-account-btn" style="background-color: red; color: white; margin-top: 20px;">DELETE ACCOUNT</button>
+                </div>
+            </div>
         </div>
     </div>
 </body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Staff Dashboard</title>
+    <link rel="stylesheet" href="styles/guest_dashboard.css">
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="grid-container">
+        <div class="sidebar-body">
+            <div class="sidebar-wrapper">
+                <span class="logo">HM STAFF</span>
+                <div class="sidebar-link">
+                    <ul>
+                        <li><a href="#" class="active">Check-In Desk</a></li>
+                    </ul>
+                </div>
+                <div class="sidebar-bottom">
+                    <a href="#" class="link" onclick="logoutStaff()">Log Out</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="page active" style="padding: 40px;">
+            <div class="card">
+                <div class="card-header">
+                    <p class="text-primary">GUEST CHECK-IN & PAYMENT</p>
+                </div>
+                <div class="card-info">
+                    <form id="checkin-form">
+                        <div class="field-holder">
+                            <label>Guest Email</label>
+                            <input type="email" id="ci-email" required placeholder="guest@example.com" style="width:100%; padding:10px; margin-bottom:10px;">
+                        </div>
+                        <div class="field-holder">
+                            <label>Room Type Booked</label>
+                            <select id="ci-room-type" required style="width:100%; padding:10px; margin-bottom:10px;">
+                                <option value="single">Single</option>
+                                <option value="double">Double</option>
+                                <option value="suite">Suite</option>
+                                <option value="deluxe">Deluxe</option>
+                                <option value="economy">Economy</option>
+                            </select>
+                        </div>
+                        <div class="field-holder">
+                            <label>Payment Method</label>
+                            <select id="ci-payment" required style="width:100%; padding:10px; margin-bottom:10px;">
+                                <option value="credit_card">Credit Card</option>
+                                <option value="cash">Cash</option>
+                                <option value="paypal">PayPal</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+                        <div class="field-holder">
+                            <label>Transaction ID (from machine)</label>
+                            <input type="text" id="ci-trans-id" required placeholder="TXN-123456" style="width:100%; padding:10px; margin-bottom:10px;">
+                        </div>
+                        
+                        <button type="submit" style="background-color: #2c3e50; color: white; padding: 15px; width: 100%; cursor: pointer;">
+                            PROCESS CHECK-IN
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('checkin-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Matches CheckInRequest model in main.py
+            const body = {
+                email: document.getElementById('ci-email').value,
+                room_type: document.getElementById('ci-room-type').value,
+                payment_method: document.getElementById('ci-payment').value,
+                transaction_id: document.getElementById('ci-trans-id').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/bookings/check-in`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert("Success: " + data.message); // Should say "Success" based on logic.py
+                } else {
+                    alert("Error: " + data.detail);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Connection failed.");
+            }
+        });
+        function logoutStaff() {
+            localStorage.clear(); 
+            window.location.href = "staff_login_page.html";
+        }
+    </script>
+</body>
+</html>

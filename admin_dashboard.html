@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="styles/guest_dashboard.css">
+    <script src="config.js"></script>
+</head>
+
+<body>
+    <div class="grid-container">
+        <div class="sidebar-body">
+            <div class="sidebar-wrapper">
+                <span class="logo">HOTEL ADMIN</span>
+                <div class="sidebar-link">
+                    <ul>
+                        <li><a href="#" class="active">Manage Rooms</a></li>
+                    </ul>
+                </div>
+                <div class="sidebar-bottom">
+                    <a href="#" class="link" onclick="logoutAdmin()">Log Out</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="page active" style="padding: 40px;">
+            
+            <div class="card" style="margin-bottom: 30px;">
+                <div class="card-header"><p class="text-primary">ADD NEW ROOM</p></div>
+                <div class="card-info">
+                    <form id="add-room-form">
+                        <input type="text" id="add-number" placeholder="Room Number (e.g. 101)" required style="padding:10px;">
+                        <select id="add-type" required style="padding:10px;">
+                            <option value="single">Single</option>
+                            <option value="double">Double</option>
+                            <option value="suite">Suite</option>
+                            <option value="deluxe">Deluxe</option>
+                            <option value="economy">Economy</option>
+                        </select>
+                        <input type="number" id="add-price" placeholder="Price per Night" required style="padding:10px;">
+                        <button type="submit" style="padding:10px; background:blue; color:white;">Create Room</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><p class="text-primary">DELETE ROOM</p></div>
+                <div class="card-info">
+                    <p>Note: You cannot delete a room that has existing bookings.</p>
+                    <form id="delete-room-form">
+                        <input type="number" id="delete-id" placeholder="Room ID (Database ID)" required style="padding:10px;">
+                        <button type="submit" style="padding:10px; background:red; color:white;">Delete Room</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem("accessToken"); // Admin needs to login first!
+
+        // ADD ROOM
+        document.getElementById('add-room-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const body = {
+                room_number: document.getElementById('add-number').value,
+                room_type: document.getElementById('add-type').value,
+                price_per_night: parseFloat(document.getElementById('add-price').value)
+            };
+
+            const response = await fetch(`${API_BASE_URL}/rooms/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (response.ok) {
+                alert("Room Created!");
+                e.target.reset();
+            } else {
+                const err = await response.json();
+                alert("Error: " + err.detail);
+            }
+        });
+
+        // DELETE ROOM
+        document.getElementById('delete-room-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const roomId = document.getElementById('delete-id').value;
+
+            const response = await fetch(`${API_BASE_URL}/rooms/${roomId}`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                alert("Room Deleted.");
+                e.target.reset();
+            } else {
+                const err = await response.json();
+                alert("Error: " + err.detail);
+            }
+        });
+        function logoutAdmin() {
+            localStorage.clear();
+            window.location.href = "admin_login_page.html";
+        }
+    </script>
+</body>
+</html>
