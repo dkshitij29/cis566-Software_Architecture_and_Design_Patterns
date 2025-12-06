@@ -138,6 +138,22 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     
     return token_data.user_id
 
+async def get_current_admin(current_user_id: int = Depends(get_current_user)):
+    """
+    Dependency that acts as a gatekeeper.
+    1. Checks if user is logged in (via get_current_user).
+    2. Checks if that user has 'admin' role.
+    """
+    role = logic.get_user_role(current_user_id)
+    
+    if role != 'admin':
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to perform this action."
+        )
+    
+    return current_user_id
+
 
 # --- API Routers (Organizing Endpoints) ---
 
@@ -254,7 +270,7 @@ def delete_my_account(current_user_id: int = Depends(get_current_user)):
 # --- Room Endpoints ---
 
 @rooms_router.post("/", response_model=RoomResponse, status_code=status.HTTP_201_CREATED)
-def create_new_room(room: RoomCreate, current_user_id: int = Depends(get_current_user)):
+def create_new_room(room: RoomCreate, current_user_id: int = Depends(get_current_admin)):
     """
     Create a new room. (Protected - requires login).
     """
@@ -282,7 +298,7 @@ def get_available_rooms(room_type: str, check_in: str, check_out: str):
     return result 
 
 @rooms_router.delete("/{room_id}", status_code=status.HTTP_200_OK)
-def delete_room_endpoint(room_id: int, current_user_id: int = Depends(get_current_user)):
+def delete_room_endpoint(room_id: int, current_user_id: int = Depends(get_current_admin)):
     """
     Deletes a room by ID. (Protected - requires login/Admin access)
     Fails if the room has existing bookings (ON DELETE RESTRICT).
@@ -339,7 +355,7 @@ def cancel_booking_endpoint(booking_id: int, current_user_id: int = Depends(get_
     return {"message": "Success: Pending booking has been canceled."}
 
 @bookings_router.post("/check-in", status_code=status.HTTP_200_OK)
-def process_check_in(request: CheckInRequest):
+def process_check_in(request: CheckInRequest,current_user_id: int = Depends(get_current_admin)):
     """
     The main business workflow:
     Finds a pending booking, logs payment, and confirms the booking.

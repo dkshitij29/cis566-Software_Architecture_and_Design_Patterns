@@ -32,6 +32,22 @@ def password_hash_function(pwd: str) -> str:
    hashed_bytes = bcrypt.hashpw(pwd.encode('utf-8'), salt)
    return hashed_bytes.decode('utf-8')
 
+def get_user_role(user_id: int):
+    try:
+        response = (
+            supabase.table("users")
+            .select("role")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+        if response.data:
+            return response.data[0]['role']
+        return None
+    except Exception as e:
+        logger.error(f"Error fetching role for user {user_id}: {e}", exc_info=True)
+        return None
+
 def create_newuser(firstname: str, lastname: str, username: str, email: str, phone_number: str, password: str):
     
     regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
