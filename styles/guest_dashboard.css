@@ -69,7 +69,6 @@
 .text-primary {
   font-size: 25px;
   justify-content: left;
-  margin-left: 20px;
 }
 
 .view-all-stays-btn {
@@ -79,7 +78,7 @@
     display: flex;
     border-radius: 8px;
     border: none;
-    background-color: #6067EB;
+    background-color: #9b2b5a;
     color: #f8f7fd;
     cursor: pointer;
 }
@@ -90,7 +89,7 @@
     display: flex;
     border-radius: 8px;
     border: none;
-    background-color: #6067ebde;
+    background-color: #9b2b5a;
     color: #f8f7fd;
     cursor: pointer;
 }
@@ -121,7 +120,7 @@
 .list-view button {
   padding: 10px 11px;
   border-radius: 6px;
-  background-color: #6067EB;
+  background-color: #9b2b5a;
   border: none;
   color: white;
   cursor: pointer;
@@ -270,4 +269,65 @@
 #filterSelect option {
   color: #000;
 }
+
+
+/* General button styling */
+#save-settings-btn, 
+#delete-account-btn, 
+#create-room-btn, 
+#delete-room-btn, 
+#process-checkin-button {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease; /* smooth hover effect */
+}
+
+#delete-account-btn{
+  margin-top: 10px;
+  width: fit-content;
+  background: red;
+}
+
+#save-settings-btn {
+  margin-top: 10px;
+  width: fit-content;
+  background: blue;
+}
+
+#process-checkin-button {
+  padding: 15px;
+  width: 100%;
+  background: #bb7e24 ;
+  font-size: 15px;
+}
+
+#process-checkin-button:hover {
+  padding: 15px;
+  width: 100%;
+  background: #835818 ;
+  font-size: 15px;
+}
+
+/* Specific colors */
+#create-room-btn {
+    background: blue;
+}
+
+#delete-room-btn {
+    background: red;
+}
+
+#save-settings-btn:hover,
+#create-room-btn:hover {
+    background: darkblue;  /* darker shade on hover */
+}
+
+#delete-account-btn:hover,
+#delete-room-btn:hover {
+    background: darkred;
+}
+
 /* end */

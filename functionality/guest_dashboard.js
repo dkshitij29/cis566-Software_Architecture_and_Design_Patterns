@@ -55,7 +55,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
             localStorage.clear();
-            window.location.href = "guest_login_page.html";
+            
+            window.location.href = "index.html";
         });
     }
 

@@ -84,7 +84,7 @@
         <div class="page active" id="main-container">
             <div class = "card">
                 <div class = "card-header">
-                    <p class = "text-primary" id="view-title">UPCOMING/CURRENT STAYS</p>
+                    <p class = "text-primary" id="view-title" style="margin-left: 20px;">UPCOMING/CURRENT STAYS</p>
                     <button class="view-all-stays-btn" id="toggle">View BOOKING HISTORY</button>
                 </div>
                 <div class = "card-info">
@@ -150,9 +150,18 @@
             <div class="card">
                 <div class="card-header">
                     <p class="text-primary">ACCOUNT SETTINGS</p>
+                    <button id="delete-account-btn">DELETE ACCOUNT</button>
+                </div>
+                <div class="card-info">
+                    <p><strong>Current Account Information</strong></p>
+                    <p>First Name: <span id="current-firstname">John</span></p>
+                    <p>Last Name: <span id="current-lastname">Doe</span></p>
+                    <p>Email: <span id="current-email">john.doe@example.com</span></p>
+                    <p>Phone: <span id="current-phone">123-456-7890</span></p>
                 </div>
                 <div class="card-info">
                     <form id="update-profile-form">
+                        <p><strong>Update Account Information</strong></p>
                         <div class="field-holder">
                             <label>First Name</label>
                             <input type="text" id="update-firstname" required>
@@ -171,8 +180,6 @@
                         </div>
                         <button type="submit" id="save-settings-btn">Update Profile</button>
                     </form>
-                    <hr>
-                    <button id="delete-account-btn" style="background-color: red; color: white; margin-top: 20px;">DELETE ACCOUNT</button>
                 </div>
             </div>
         </div>

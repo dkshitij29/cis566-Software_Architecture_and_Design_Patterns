@@ -4,26 +4,76 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="styles/guest_dashboard.css">
+    <link rel="stylesheet" href="styles/guest_dashboard_sidebar.css">
+    <link href='https://cdn.boxicons.com/3.0.4/fonts/basic/boxicons.min.css' rel='stylesheet'>
+    <link href='https://cdn.boxicons.com/3.0.4/fonts/brands/boxicons-brands.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <script src="config.js"></script>
 </head>
 
+
 <body>
     <div class="grid-container">
-        <div class="sidebar-body">
-            <div class="sidebar-wrapper">
-                <span class="logo">HOTEL ADMIN</span>
-                <div class="sidebar-link">
+         <div class = "sidebar-body">
+            <div class = "sidebar-wrapper" style = "background-color: #0f2e32;">
+                <!-- HEADER TOPBAR-->
+                <a href="#" class="logo-wrapper">
+                    <span class = "logo" style="background-color: #256c75;"> HM </span>
+                    <h2 class = "hide">HOTEL ADMIN</h2>
+                </a>
+
+            <!-- HEADER END -->
+
+            <!-- Profile / Avatar -->
+                <div class = "sidebar-profile" style="border-top: 1px solid #256c75">
+                    <div class = "avatar-wrapper">
+                        <i class='bx  bx-user-circle' alt="profile"></i> 
+                    </div>
+                    <div class = "avatar-name">
+                        <div class = "user-name">username</div>
+                        <div class = "email">user@email.com</div>
+                    </div>
+                </div> 
+
+                <!-- SIDEBAR LINK -->
+                <div class = "sidebar-link" id="sidebar-link-admin-1" style="border-top:  1px solid #256c75;">
                     <ul>
-                        <li><a href="#" class="active">Manage Rooms</a></li>
+                        <li>
+                            <a href = "#" class="sidebar-tab" >
+                                <i class = "bx bxs-home"></i>
+                                <span class = "link">Manage Rooms</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
-                <div class="sidebar-bottom">
-                    <a href="#" class="link" onclick="logoutAdmin()">Log Out</a>
+                <!-- SIDEBAR LINK END -->
+
+                <!-- SIDEBAR BOTTOM -->
+                <div class = "sidebar-bottom">
+                    <div class = "sidebar-link" id="sidebar-link-admin-2" style="border-top: 1px solid #256c75;">
+                        <ul>
+                            <li>
+                                <a href = "#" class="sidebar-tab">
+                                    <i class = "bx bx-cog"></i>
+                                    <span class = "link">Settings</span>
+                                </a>
+                                <a href="#" id="guest-logout-btn"> 
+                                    <i class="bx bx-arrow-out-right-circle-half"></i>
+                                    <span href="#" class="link" onclick="logoutAdmin()">Log Out</a>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Profile / Avatar End -->
                 </div>
+                <!-- SIDEBAR BOTTOM END -->
             </div>
         </div>
 
-        <div class="page active" style="padding: 40px;">
+
+        <div class="page active" id = "manage-rooms-page" style="padding: 40px;">
             
             <div class="card" style="margin-bottom: 30px;">
                 <div class="card-header"><p class="text-primary">ADD NEW ROOM</p></div>
@@ -38,7 +88,7 @@
                             <option value="economy">Economy</option>
                         </select>
                         <input type="number" id="add-price" placeholder="Price per Night" required style="padding:10px;">
-                        <button type="submit" style="padding:10px; background:blue; color:white;">Create Room</button>
+                        <button type="submit" id="create-room-btn">Create Room</button>
                     </form>
                 </div>
             </div>
@@ -48,12 +98,30 @@
                 <div class="card-info">
                     <p>Note: You cannot delete a room that has existing bookings.</p>
                     <form id="delete-room-form">
-                        <input type="number" id="delete-id" placeholder="Room ID (Database ID)" required style="padding:10px;">
-                        <button type="submit" style="padding:10px; background:red; color:white;">Delete Room</button>
+                        <input type="number" id="delete-id" placeholder="Room ID (Database ID)" required style="padding:10px; width: 250px;;">
+                        <button type="submit" id="delete-room-btn">Delete Room</button>
                     </form>
                 </div>
             </div>
         </div>
+
+
+        <div class="page" id="settings">
+            <div class="card">
+                <div class="card-header">
+                    <p class="text-primary">ACCOUNT SETTINGS</p>
+                    <button id="delete-account-btn">DELETE ACCOUNT</button>
+                </div>
+                <div class="card-info">
+                    <p><strong>Current Account Information</strong></p>
+                    <p>First Name: <span id="current-firstname">John</span></p>
+                    <p>Last Name: <span id="current-lastname">Doe</span></p>
+                    <p>Email: <span id="current-email">john.doe@example.com</span></p>
+                    <p>Phone: <span id="current-phone">123-456-7890</span></p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -106,9 +174,48 @@
                 alert("Error: " + err.detail);
             }
         });
+
+         // Select all sidebar links with the class 'sidebar-tab'
+        const sidebarLinks = document.querySelectorAll('.sidebar-tab');
+        // Select all page containers
+        const pages = document.querySelectorAll('.page');
+
+        function showPage(pageId) {
+            pages.forEach(p => p.classList.remove('active'));
+            const target = document.getElementById(pageId);
+            if (target) target.classList.add('active');
+        }
+
+        // Add click events to sidebar links
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault(); // prevent default href behavior
+
+                // Remove active class from all links
+                sidebarLinks.forEach(l => l.classList.remove('active'));
+                // Add active class to clicked link
+                link.classList.add('active');
+
+                // Show the corresponding page
+                const text = link.innerText.trim();
+                if (text === "Manage Rooms") {
+                    showPage("manage-rooms-page");
+                }
+                if (text === "Settings") showPage("settings");
+            });
+        });
+
+        // On page load, set Manage Rooms as active
+        window.addEventListener('DOMContentLoaded', () => {
+            const manageRoomsTab = Array.from(sidebarLinks).find(link => link.innerText.trim() === "Manage Rooms");
+            if (manageRoomsTab) {
+                manageRoomsTab.classList.add('active');
+                showPage("manage-rooms-page");
+            }
+        });
         function logoutAdmin() {
             localStorage.clear();
-            window.location.href = "admin_login_page.html";
+            window.location.href = "index.html";
         }
     </script>
 </body>

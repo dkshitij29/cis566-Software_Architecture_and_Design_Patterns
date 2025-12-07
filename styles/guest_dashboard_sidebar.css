@@ -20,7 +20,7 @@ body{
     position: sticky;
     top: 0;
     left: 0;
-    background-color: #1F2937;
+    background-color: #321924;
     width: 288px;
     padding: 10px 12px;
     display: flex;
@@ -47,7 +47,7 @@ body{
 
 .logo {
     padding: 8px 8px;
-    background-color: #6067EB;
+    background-color: #9b2b5a;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -66,7 +66,7 @@ body{
 .sidebar-link{
     padding: 8px 0;
     margin-top: 10px;
-    border-top: 1px solid #6067EB;
+    border-top: 1px solid #9b2b5a;
 }
 
 .sidebar-link ul{
@@ -108,11 +108,40 @@ body{
 .sidebar-link .active {
     width: 100%;
     text-decoration: none;
-    background-color: #6067EB;
+    background-color: #9b2b5a;
     border-radius: 8px;
     outline: none;
     color: #f8f7fd;
 }
+
+#sidebar-link-staff-1 li a:hover,
+#sidebar-link-staff-1 li a:focus,
+#sidebar-link-staff-1 .active,
+#sidebar-link-staff-2 li a:hover,
+#sidebar-link-staff-2 li a:focus,
+#sidebar-link-staff-2 .active {
+    width: 100%;
+    text-decoration: none;
+    background-color: #bb7e24;
+    border-radius: 8px;
+    outline: none;
+    color: #f8f7fd;
+}
+
+#sidebar-link-admin-1 li a:hover,
+#sidebar-link-admin-1 li a:focus,
+#sidebar-link-admin-1 .active,
+#sidebar-link-admin-2 li a:hover,
+#sidebar-link-admin-2 li a:focus,
+#sidebar-link-admin-2 .active {
+    width: 100%;
+    text-decoration: none;
+    background-color: #256c75;
+    border-radius: 8px;
+    outline: none;
+    color: #f8f7fd;
+}
+
 .sidebar-link .active{
     color: #f8f7fd;
 }
@@ -136,7 +165,7 @@ body{
     padding: 15px 2px;
     padding-bottom: 10px;
     margin-top: 10px;
-    border-top: 1px solid #6067EB
+    border-top: 1px solid #9b2b5a
 }
 
 .avatar-wrapper{
