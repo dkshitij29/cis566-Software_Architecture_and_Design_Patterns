@@ -51,7 +51,7 @@ This project follows a strict **Layered Architecture** to ensure Separation of C
 
 ### Prerequisites
 
-  * Python 3.9+
+  * Python 3.11+
   * A Supabase account (for PostgreSQL)
 
 ### 1\. Clone the Repository
