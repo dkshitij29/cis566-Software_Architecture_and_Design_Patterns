@@ -1,0 +1,122 @@
+*{
+  font-family: 'Montserrat';
+}
+
+html {
+    height: 100%
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  background: #020024;
+  background: linear-gradient(44deg, rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
+}
+
+#main-holder {
+  width: fit-content;
+  height: fit-content;
+  margin: 0;
+  padding: 0;
+  display: block;
+  justify-items: center;
+  align-items: center;
+  background-color:rgb(255, 255, 255);
+  border-radius: 10px;
+  box-shadow: 0px 0px 5px 2px rgb(116, 116, 116);
+}
+
+#welcome-holder { 
+    width: 100%;
+    height: fit-content;
+    padding-top: 70px;
+    padding-left: 80px;
+    padding-right: 80px;
+    margin-bottom: -10px;
+    display: grid;
+    justify-items: center;
+    align-items: center;
+}
+
+#welcome-header {
+  margin: 0px;
+  padding: 0;
+}
+
+#welcome-msg {
+    width: 50%;
+    text-align: center;
+    margin: 0px;
+    padding-top: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #000000;
+}
+
+#login-selection-holder{
+  width: fit-content;
+  height: fit-content;
+  margin-top: 40px;
+  padding: 0;
+  display: grid;
+  justify-items: center;
+  align-items: center;
+}
+
+input {
+  width: 200px;
+  padding: 10px;
+  margin: 7px;
+  border-style : solid;
+  border-radius: 10px;
+  border-width: 3px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  background: transparent;
+  transition: .2s ease-in-out;
+}
+
+#patient-login-form-submit {
+  border-color: #9b2b5a;
+  background-color: #9b2b5a;
+}
+
+#practioner-login-form-submit {
+  border-color: #bb7e24;
+  background-color: #bb7e24;
+}
+
+#admin-login-form-submit {
+  border-color: #256c75;
+  background-color: #256c75;
+  margin-bottom: 60px;
+}
+
+#patient-login-form-submit:hover {
+  margin: 10px;
+  background: transparent;
+  color: #e41665;
+  letter-spacing: 2px;
+}
+
+#practioner-login-form-submit:hover{
+  margin: 10px;
+  background: transparent;
+  color: #bb7e24;
+  letter-spacing: 2px;
+}
+
+#admin-login-form-submit:hover{
+  margin: 10px;
+  margin-bottom: 60px;
+  background: transparent;
+  color: #256c75;
+  letter-spacing: 2px;
+}

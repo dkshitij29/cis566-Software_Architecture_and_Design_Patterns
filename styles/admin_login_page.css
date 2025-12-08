@@ -1,0 +1,32 @@
+*{
+  font-family: 'Montserrat';
+}
+
+.login-form-field:focus,
+.login-form-field:valid{
+  border-bottom: 3px solid #256c75;
+}
+
+#login-form-submit:hover {
+  color: #256c75;
+}
+
+#signup-form-submit:hover {
+  background-color: #256c75;
+  color: white;
+}
+
+#login-form-submit {
+  background-color: #256c75;
+  border-color: #256c75;
+}
+
+#signup-form-submit {
+  border-color: #256c75;
+  color: #256c75;
+}
+
+.custom-divider {
+  margin: 20px;
+}
+
