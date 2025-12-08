@@ -81,6 +81,7 @@
     background-color: #9b2b5a;
     color: #f8f7fd;
     cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
 }
 .view-all-stays-btn:hover {
     padding: 11px 11px;
@@ -89,7 +90,7 @@
     display: flex;
     border-radius: 8px;
     border: none;
-    background-color: #9b2b5a;
+    background-color: #50162e;
     color: #f8f7fd;
     cursor: pointer;
 }
@@ -272,6 +273,7 @@
 
 
 /* General button styling */
+#search-btn,
 #save-settings-btn, 
 #delete-account-btn, 
 #create-room-btn, 
@@ -282,7 +284,16 @@
   border-radius: 5px;
   color: white;
   cursor: pointer;
-  transition: background 0.3s ease, transform 0.2s ease; /* smooth hover effect */
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+#search-btn{
+  background : #9b2b5a;
+}
+
+
+#search-btn:hover{
+  background : #50162e;
 }
 
 #delete-account-btn{

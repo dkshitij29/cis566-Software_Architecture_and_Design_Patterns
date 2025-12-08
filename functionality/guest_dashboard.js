@@ -50,6 +50,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    const defaultLink = Array.from(sidebarLinks).find(link => link.innerText.trim() === "Dashboard");
+    if (defaultLink) {
+        defaultLink.classList.add("active");
+        showPage("main-container");
+    fetchMyBookings();
+}
+
     // Logout Button Logic (Sidebar bottom)
     const logoutBtn = document.getElementById("guest-logout-btn"); // Change selector to ID
     if (logoutBtn) {
